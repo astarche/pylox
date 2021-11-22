@@ -1,13 +1,15 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
+from pylox.parser import parse
+from pylox.printer import print_expr
 from pylox.scanner import scan_tokens
 
 
 def run(input: str) -> None:
     tokens = scan_tokens(input)
-    for t in tokens:
-        print(t)
+    expr = parse(tokens)
+    print_expr(expr)
 
 
 def run_file(input_path: Path) -> None:
