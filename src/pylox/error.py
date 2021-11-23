@@ -1,2 +1,2 @@
-def error(line: int, message: str) -> None:
-    print(line, message)
+def error(location: int | str, message: str) -> None:
+    print(f"Error ({location}): {message}")

@@ -40,3 +40,16 @@ def test_multiline(capsys):
     )
 
     _assert_std_out(capsys, "1\ncool string\n100\n")
+
+
+def test_define_access_update(capsys):
+    run(
+        """
+        var x = 1;
+        print x;
+        x = 2;
+        print x + 1;
+        """
+    )
+
+    _assert_std_out(capsys, "1\n3\n")

@@ -1,9 +1,9 @@
 from typing import Iterable, Optional
 
 from pylox.error import error
-from pylox.expr import Binary, Expr, Grouping, Unary, Literal
+from pylox.expr import Assign, Binary, Expr, Grouping, Unary, Literal, Variable
 from pylox.scanner import Token, TokenType
-from pylox.stmt import ExprStmt, Print, Stmt
+from pylox.stmt import ExprStmt, Print, Stmt, Var
 
 
 class ParseError(Exception):
@@ -43,7 +43,7 @@ class _ParseView:
         if token and token.token == expected:
             return self.advance()
 
-        raise self._error(token, message)
+        raise self._error(token or self._tokens[-1], message)
 
 
 def _primary(parser: _ParseView) -> Expr:
@@ -59,6 +59,8 @@ def _primary(parser: _ParseView) -> Expr:
         expr = _expression(parser)
         parser.consume(TokenType.RIGHT_PAREN, "Unterminated grouping")
         return Grouping(expr)
+    if identifier := parser.match(TokenType.IDENTIFIER):
+        return Variable(identifier)
 
 
 def _unary(parser: _ParseView) -> Expr:
@@ -111,8 +113,22 @@ def _equality(parser: _ParseView) -> Expr:
     return expr
 
 
+def _assignment(parser: _ParseView) -> Expr:
+    expr = _equality(parser)
+
+    if equals := parser.match(TokenType.EQUAL):
+        value = _assignment(parser)
+
+        if isinstance(expr, Variable):
+            return Assign(expr.name, value)
+
+        parser._error(equals, "Invalid assignment target")
+
+    return expr
+
+
 def _expression(parser: _ParseView) -> Expr:
-    return _equality(parser)
+    return _assignment(parser)
 
 
 def _statement(parser: _ParseView) -> Stmt:
@@ -120,6 +136,17 @@ def _statement(parser: _ParseView) -> Stmt:
         expr = _expression(parser)
         parser.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(expr)
+
+    if parser.match(TokenType.VAR):
+        name = parser.consume(TokenType.IDENTIFIER, "Expect variable name.")
+
+        initializer = None
+        if parser.match(TokenType.EQUAL):
+            initializer = _expression(parser)
+
+        parser.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
+        return Var(name, initializer)
+
     expr = _expression(parser)
     parser.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
     return ExprStmt(expr)
@@ -131,5 +158,9 @@ def parse_expr(tokens: Iterable[Token]) -> object:
 
 def parse(tokens: Iterable[Token]) -> Iterable[Stmt]:
     parser = _ParseView(tokens)
-    while not parser.is_at_end():
-        yield _statement(parser)
+
+    try:
+        while not parser.is_at_end():
+            yield _statement(parser)
+    except ParseError:
+        pass

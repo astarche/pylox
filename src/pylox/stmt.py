@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from pylox.expr import Expr
+from pylox.scanner import Token
 
 
 class Stmt:
@@ -15,3 +16,9 @@ class ExprStmt:
 @dataclass(slots=True)
 class Print:
     expr: Expr
+
+
+@dataclass(slots=True)
+class Var:
+    name: Token
+    initializer: Expr

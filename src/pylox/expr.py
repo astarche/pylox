@@ -28,3 +28,14 @@ class Literal(Expr):
 class Unary(Expr):
     operator: Token
     right: Expr
+
+
+@dataclass(slots=True)
+class Variable(Expr):
+    name: Token
+
+
+@dataclass(slots=True)
+class Assign(Expr):
+    name: str
+    value: Expr
