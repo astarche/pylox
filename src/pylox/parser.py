@@ -3,6 +3,11 @@ from typing import Iterable, Optional
 from pylox.error import error
 from pylox.expr import Binary, Expr, Grouping, Unary, Literal
 from pylox.scanner import Token, TokenType
+from pylox.stmt import ExprStmt, Print, Stmt
+
+
+class ParseError(Exception):
+    pass
 
 
 class _ParseView:
@@ -29,6 +34,17 @@ class _ParseView:
             return self.advance()
         return None
 
+    def _error(self, token: Token, message: str) -> ParseError:
+        error(token.line, message)
+        return ParseError()
+
+    def consume(self, expected: TokenType, message: str) -> Token:
+        token = self.peek()
+        if token and token.token == expected:
+            return self.advance()
+
+        raise self._error(token, message)
+
 
 def _primary(parser: _ParseView) -> Expr:
     if parser.match(TokenType.TRUE):
@@ -39,12 +55,10 @@ def _primary(parser: _ParseView) -> Expr:
         return Literal(None)
     if token := parser.match(TokenType.NUMBER, TokenType.STRING):
         return Literal(token.literal)
-    if start := parser.match(TokenType.LEFT_PAREN):
+    if parser.match(TokenType.LEFT_PAREN):
         expr = _expression(parser)
-        if parser.match(TokenType.RIGHT_PAREN):
-            return Grouping(expr)
-        else:
-            error(start.line, "Unterminated grouping")
+        parser.consume(TokenType.RIGHT_PAREN, "Unterminated grouping")
+        return Grouping(expr)
 
 
 def _unary(parser: _ParseView) -> Expr:
@@ -101,5 +115,21 @@ def _expression(parser: _ParseView) -> Expr:
     return _equality(parser)
 
 
-def parse(tokens: Iterable[Token]) -> Expr:
+def _statement(parser: _ParseView) -> Stmt:
+    if parser.match(TokenType.PRINT):
+        expr = _expression(parser)
+        parser.consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        return Print(expr)
+    expr = _expression(parser)
+    parser.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+    return ExprStmt(expr)
+
+
+def parse_expr(tokens: Iterable[Token]) -> object:
     return _expression(_ParseView(tokens))
+
+
+def parse(tokens: Iterable[Token]) -> Iterable[Stmt]:
+    parser = _ParseView(tokens)
+    while not parser.is_at_end():
+        yield _statement(parser)

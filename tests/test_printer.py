@@ -1,10 +1,10 @@
-from pylox.parser import parse
+from pylox.parser import parse_expr
 from pylox.printer import expr_to_string
 from pylox.scanner import scan_tokens
 
 
 def test_print():
-    expr = parse(scan_tokens("(78 * 12) + 100 + 10 * 10"))
+    expr = parse_expr(scan_tokens("(78 * 12) + 100 + 10 * 10;"))
 
     expr_str = expr_to_string(expr)
 

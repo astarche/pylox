@@ -8,8 +8,8 @@ from pylox.scanner import scan_tokens
 
 def run(input: str) -> None:
     tokens = scan_tokens(input)
-    expr = parse(tokens)
-    print(interpret(expr))
+    program = parse(tokens)
+    interpret(program)
 
 
 def run_file(input_path: Path) -> None:
