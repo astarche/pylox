@@ -53,3 +53,23 @@ def test_define_access_update(capsys):
     )
 
     _assert_std_out(capsys, "1\n3\n")
+
+
+def test_block(capsys):
+    run(
+        """
+        var x = 1;
+        {
+            var x = 5;
+            print x;
+            {
+                var x = x + 10;
+                print x;
+            }
+            print x;
+        }
+        print x;
+        """
+    )
+
+    _assert_std_out(capsys, "5\n15\n5\n1\n")

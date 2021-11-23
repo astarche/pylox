@@ -2,7 +2,7 @@ from typing import Iterable
 
 from pylox.environment import Environment
 from pylox.expr import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
-from pylox.stmt import ExprStmt, Print, Stmt, Var
+from pylox.stmt import Block, ExprStmt, Print, Stmt, Var
 
 
 def _is_truthy(val: object):
@@ -33,6 +33,8 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
             env.define(name.lexeme, None)
         case Var(name, initializer):
             env.define(name.lexeme, _interpret(initializer, env))
+        case Block(stmts):
+            interpret(stmts, Environment(env))
         case Literal(val_expr):
             return val_expr
         case Binary(left, operator, right):

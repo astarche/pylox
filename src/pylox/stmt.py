@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 from pylox.expr import Expr
 from pylox.scanner import Token
@@ -9,16 +10,21 @@ class Stmt:
 
 
 @dataclass(slots=True)
-class ExprStmt:
+class ExprStmt(Stmt):
     expr: Expr
 
 
 @dataclass(slots=True)
-class Print:
+class Print(Stmt):
     expr: Expr
 
 
 @dataclass(slots=True)
-class Var:
+class Var(Stmt):
     name: Token
     initializer: Expr
+
+
+@dataclass(slots=True)
+class Block(Stmt):
+    stmts: List[Stmt]
