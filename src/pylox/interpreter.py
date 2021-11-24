@@ -1,7 +1,8 @@
 from typing import Iterable
 
 from pylox.environment import Environment
-from pylox.expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
+from pylox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
+from pylox.runtime import LoxCallable, runtime_error
 from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var, While
 
 
@@ -30,9 +31,9 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
         case ExprStmt(expr):
             _interpret(expr, env)
         case Var(name, None):
-            env.define(name.lexeme, None)
+            env.define(name, None)
         case Var(name, initializer):
-            env.define(name.lexeme, _interpret(initializer, env))
+            env.define(name, _interpret(initializer, env))
         case Block(stmts):
             block_env = Environment(env)
             for stmt in stmts:
@@ -72,7 +73,7 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
                 case "!=":
                     return lhs != rhs
                 case _:
-                    raise RuntimeError(f"({operator.line}) Unrecognized operator {operator.lexeme}")
+                    raise runtime_error(operator, f"Unrecognized operator {operator.lexeme}")
         case Unary(operator, right):
             rhs = _interpret(right, env)
             match operator.lexeme:
@@ -90,14 +91,21 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
                     if _is_truthy(lhs):
                         return lhs
             return _interpret(right, env)
+        case Call(callee_expr, arg_exprs, closing_paren):
+            func = _interpret(callee_expr, env)
+            if not isinstance(func, LoxCallable):
+                raise runtime_error(closing_paren, "Callee is not a function!")
+            if func.arity != len(arg_exprs):
+                raise runtime_error(closing_paren, "Wrong nargs!")
+            return func(*[_interpret(a, env) for a in arg_exprs])
         case Grouping(expr):
             return _interpret(expr, env)
         case Assign(name, val_expr):
             val = _interpret(val_expr, env)
-            env.assign(name.lexeme, val)
+            env.assign(name, val)
             return val
         case Variable(name):
-            return env.access(name.lexeme)
+            return env.access(name)
 
 
 def interpret(stmts: Iterable[Stmt], env: Environment) -> None:

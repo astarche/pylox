@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from pathlib import Path
-from pylox.environment import Environment
+from pylox.environment import Environment, init_global_env
 
 from pylox.parser import parse
 from pylox.interpreter import interpret
@@ -8,7 +8,7 @@ from pylox.scanner import scan_tokens
 
 
 def run(input: str, env: Environment = None) -> None:
-    env = env or Environment()
+    env = env or init_global_env()
     tokens = scan_tokens(input)
     program = parse(tokens)
     interpret(program, env)
@@ -21,7 +21,7 @@ def run_file(input_path: Path) -> None:
 
 
 def run_prompt() -> None:
-    env = Environment()
+    env = init_global_env()
     try:
         while True:
             print("> ", end="")

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 from pylox.scanner import Token
 
@@ -37,7 +38,7 @@ class Variable(Expr):
 
 @dataclass(slots=True)
 class Assign(Expr):
-    name: str
+    name: Variable
     value: Expr
 
 
@@ -46,3 +47,10 @@ class Logical(Expr):
     left: Expr
     operator: Token
     right: Expr
+
+
+@dataclass(slots=True)
+class Call(Expr):
+    callee: Expr
+    args: List[Expr]
+    closing_paren: Token

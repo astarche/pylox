@@ -41,3 +41,9 @@ class If(Stmt):
 class While(Stmt):
     condition: Expr
     body: Stmt
+
+
+@dataclass(slots=True)
+class Fun(Stmt):
+    name: Token
+    body: List[Stmt]

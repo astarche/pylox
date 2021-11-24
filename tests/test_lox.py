@@ -192,4 +192,16 @@ def test_for_empty(capsys):
         }
         """
     )
-    _assert_out_lines(capsys, "0", "Error (Unknown): Attempt to access undefined variable y")
+    _assert_out_lines(capsys, "0", "Error (6): Attempt to access undefined variable y")
+
+
+def test_clock(capsys):
+    run(
+        """
+        var t = clock();
+        print t > 1.0;
+        print clock() >= t;
+        """
+    )
+
+    _assert_out_lines(capsys, "true", "true")

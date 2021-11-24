@@ -1,7 +1,7 @@
-from typing import Iterable
+from typing import Iterable, List
 
 from pylox.error import error
-from pylox.expr import Assign, Binary, Expr, Grouping, Logical, Unary, Literal, Variable
+from pylox.expr import Assign, Binary, Call, Expr, Grouping, Logical, Unary, Literal, Variable
 from pylox.scanner import Token, TokenType
 from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var, While
 
@@ -69,12 +69,36 @@ def _primary(parser: _ParseView) -> Expr:
         return Variable(identifier)
 
 
+def _finish_call(parser: _ParseView, callee: Expr):
+    args: List[Expr] = []
+    if not parser.check(TokenType.RIGHT_PAREN):
+        while True:
+            args += _expression()
+            if parser.check(TokenType.RIGHT_PAREN):
+                break
+            parser.consume(TokenType.COMMA, "Expected ','.")
+
+    return Call(callee, args, parser.consume(TokenType.RIGHT_PAREN, "Expected ')'."))
+
+
+def _call(parser: _ParseView) -> Expr:
+    expr = _primary(parser)
+
+    while True:
+        if parser.match(TokenType.LEFT_PAREN):
+            expr = _finish_call(parser, expr)
+        else:
+            break
+
+    return expr
+
+
 def _unary(parser: _ParseView) -> Expr:
     if operator := parser.match(TokenType.BANG, TokenType.MINUS):
         right = _unary(parser)
         return Unary(operator, right)
 
-    return _primary(parser)
+    return _call(parser)
 
 
 def _factor(parser: _ParseView) -> Expr:
