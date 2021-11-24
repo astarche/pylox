@@ -35,3 +35,9 @@ class If(Stmt):
     condition: Expr
     if_case: Stmt
     else_case: Stmt
+
+
+@dataclass(slots=True)
+class While(Stmt):
+    condition: Expr
+    body: Stmt

@@ -38,10 +38,10 @@ def test_expr(capsys):
 def test_multiline(capsys):
     run(
         """
-    print 1;
-    print "cool string";
-    print 100 * 8 / (7 + 1);
-    """
+        print 1;
+        print "cool string";
+        print 100 * 8 / (7 + 1);
+        """
     )
 
     _assert_std_out(capsys, "1\ncool string\n100\n")
@@ -130,3 +130,28 @@ def test_andor(capsys):
     _assert_out_lines(
         capsys, "Hello", "nil", "nil", "nil", "4", "4", "Hello", "Hello", "World", "true", "1"
     )
+
+
+def test_while(capsys):
+    run(
+        """
+        var x = 0;
+        while (x < 10) {
+            print x = x + 1;
+        }
+        """
+    )
+
+    _assert_out_lines(capsys, *[str(i + 1) for i in range(0, 10)])
+
+
+def test_while_zeroiteration(capsys):
+    run(
+        """
+        var x = 100;
+        while (x = nil) print "Why?";
+        print x;
+        """
+    )
+
+    _assert_out_lines(capsys, "nil")

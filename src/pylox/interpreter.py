@@ -2,7 +2,7 @@ from typing import Iterable
 
 from pylox.environment import Environment
 from pylox.expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
-from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var
+from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var, While
 
 
 def _is_truthy(val: object):
@@ -34,12 +34,17 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
         case Var(name, initializer):
             env.define(name.lexeme, _interpret(initializer, env))
         case Block(stmts):
-            interpret(stmts, Environment(env))
+            block_env = Environment(env)
+            for stmt in stmts:
+                _interpret(stmt, block_env)
         case If(condition, if_case, else_case):
             if _interpret(condition, env):
                 _interpret(if_case, env)
             elif else_case:
                 _interpret(else_case, env)
+        case While(condition, body):
+            while _is_truthy(_interpret(condition, env)):
+                _interpret(body, env)
         case Literal(val_expr):
             return val_expr
         case Binary(left, operator, right):
@@ -54,6 +59,20 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
                     return lhs * rhs
                 case "/":
                     return lhs / rhs
+                case "<":
+                    return lhs < rhs
+                case ">":
+                    return lhs > rhs
+                case "<=":
+                    return lhs <= rhs
+                case ">=":
+                    return lhs >= rhs
+                case "==":
+                    return lhs == rhs
+                case "!=":
+                    return lhs != rhs
+                case _:
+                    raise RuntimeError(f"({operator.line}) Unrecognized operator {operator.lexeme}")
         case Unary(operator, right):
             rhs = _interpret(right, env)
             match operator.lexeme:

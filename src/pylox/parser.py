@@ -3,7 +3,7 @@ from typing import Iterable, Optional
 from pylox.error import error
 from pylox.expr import Assign, Binary, Expr, Grouping, Logical, Unary, Literal, Variable
 from pylox.scanner import Token, TokenType
-from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var
+from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var, While
 
 
 class ParseError(Exception):
@@ -122,6 +122,7 @@ def _and(parser: _ParseView) -> Expr:
 
     return expr
 
+
 def _or(parser: _ParseView) -> Expr:
     expr = _and(parser)
 
@@ -130,6 +131,7 @@ def _or(parser: _ParseView) -> Expr:
         expr = Logical(expr, operator, right)
 
     return expr
+
 
 def _assignment(parser: _ParseView) -> Expr:
     expr = _or(parser)
@@ -182,6 +184,13 @@ def _statement(parser: _ParseView) -> Stmt:
         if_case = _statement(parser)
         else_case = _statement(parser) if parser.match(TokenType.ELSE) else None
         return If(condition, if_case, else_case)
+
+    if parser.match(TokenType.WHILE):
+        parser.consume(TokenType.LEFT_PAREN, "Expect opening '('.")
+        condition = _expression(parser)
+        parser.consume(TokenType.RIGHT_PAREN, "Expected closing ')'.")
+        body = _statement(parser)
+        return While(condition, body)
 
     expr = _expression(parser)
     parser.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
