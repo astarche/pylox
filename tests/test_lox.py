@@ -220,7 +220,37 @@ def test_fun(capsys):
     _assert_out_lines(capsys, "2")
 
 
-@pytest.mark.skip(reason="NotImplemented")
+def test_return_nothing(capsys):
+    run(
+        """
+        fun nothing(a, b) {
+            print a;
+            return;
+            print b;
+        }
+
+        print nothing("Hello", "Not used");
+        """
+    )
+
+    _assert_out_lines(capsys, "Hello", "nil")
+
+
+def test_recursion(capsys):
+    run(
+        """
+        fun sum_to(i) { 
+            if (i == 0) return 0;
+            return i + sum_to(i - 1);
+        }
+        print sum_to(3);
+        print sum_to(5);
+        """
+    )
+
+    _assert_out_lines(capsys, "6", "15")
+
+
 def test_closure(capsys):
     run(
         """

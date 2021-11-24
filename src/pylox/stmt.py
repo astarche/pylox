@@ -48,3 +48,9 @@ class Fun(Stmt):
     name: Token
     params: List[Token]
     body: List[Stmt]
+
+
+@dataclass(slots=True)
+class Return(Stmt):
+    keyword: Token
+    value: Expr

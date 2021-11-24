@@ -40,7 +40,7 @@ class Environment:
 class _Clock:
     arity = 0
 
-    def __call__(self, *args):
+    def __call__(self):
         return time() / 1000.0
 
 

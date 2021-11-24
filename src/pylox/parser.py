@@ -3,7 +3,7 @@ from typing import Iterable, List
 from pylox.error import error
 from pylox.expr import Assign, Binary, Call, Expr, Grouping, Logical, Unary, Literal, Variable
 from pylox.scanner import Token, TokenType
-from pylox.stmt import Block, ExprStmt, Fun, If, Print, Stmt, Var, While
+from pylox.stmt import Block, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
 
 
 class ParseError(Exception):
@@ -73,7 +73,7 @@ def _finish_call(parser: _ParseView, callee: Expr):
     args: List[Expr] = []
     if not parser.check(TokenType.RIGHT_PAREN):
         while True:
-            args += [_expression(parser)]
+            args.append(_expression(parser))
             if parser.check(TokenType.RIGHT_PAREN):
                 break
             parser.consume(TokenType.COMMA, "Expected ','.")
@@ -254,7 +254,7 @@ def _fun(parser: _ParseView) -> Fun:
     params: List[Token] = []
     if not parser.check(TokenType.RIGHT_PAREN):
         while True:
-            params += [parser.consume(TokenType.IDENTIFIER, "Expected identifier.")]
+            params.append(parser.consume(TokenType.IDENTIFIER, "Expected identifier."))
             if parser.check(TokenType.RIGHT_PAREN):
                 break
             parser.consume(TokenType.COMMA, "Expected ','.")
@@ -264,6 +264,11 @@ def _fun(parser: _ParseView) -> Fun:
     body = list(_block(parser))
     parser.consume(TokenType.RIGHT_BRACE, "Expected '}'.")
     return Fun(name, params, body)
+
+
+def _return(parser: _ParseView, keyword: Token) -> Return:
+    expr = None if parser.check(TokenType.SEMICOLON) else _expression(parser)
+    return Return(keyword, expr)
 
 
 def _expr_stmt(parser: _ParseView) -> ExprStmt:
@@ -295,6 +300,9 @@ def _statement(parser: _ParseView) -> Stmt:
 
     if parser.match(TokenType.FUN):
         return _fun(parser)
+
+    if keyword := parser.match(TokenType.RETURN):
+        return _return(parser, keyword)
 
     return _expr_stmt(parser)
 

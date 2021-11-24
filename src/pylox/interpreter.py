@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Iterable, List
+from typing import Any, Any, Iterable, List
 
 from pylox.environment import Environment
 from pylox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
 from pylox.scanner import Token
 from pylox.runtime import LoxCallable, runtime_error
-from pylox.stmt import Block, ExprStmt, Fun, If, Print, Stmt, Var, While
+from pylox.stmt import Block, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
 
 
 def _is_truthy(val: object):
@@ -24,6 +24,11 @@ def _stringify(val: object) -> str:
         return str_val[:-2] if str_val.endswith(".0") else str_val
 
     return str(val)
+
+
+@dataclass
+class _ReturnValue(Exception):
+    value: Any | None
 
 
 def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
@@ -48,6 +53,10 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
         case While(condition, body):
             while _is_truthy(_interpret(condition, env)):
                 _interpret(body, env)
+        case Return(_, None):
+            raise _ReturnValue(None)
+        case Return(_, expr):
+            raise _ReturnValue(_interpret(expr, env))
         case Literal(val_expr):
             return val_expr
         case Binary(left, operator, right):
@@ -125,7 +134,11 @@ class LoxFunction:
         for token, value in zip(self.params, args):
             call_env.define(token, value)
 
-        interpret_block(self.body, call_env)
+        try:
+            interpret_block(self.body, call_env)
+        except _ReturnValue as ret:
+            return ret.value
+        return None
 
 
 def interpret_block(stmts: Iterable[Stmt], env: Environment) -> None:
