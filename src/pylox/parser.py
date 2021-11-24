@@ -1,4 +1,4 @@
-from typing import Iterable, Optional
+from typing import Iterable
 
 from pylox.error import error
 from pylox.expr import Assign, Binary, Expr, Grouping, Logical, Unary, Literal, Variable
@@ -18,17 +18,23 @@ class _ParseView:
     def is_at_end(self) -> bool:
         return self._current >= len(self._tokens)
 
-    def peek(self) -> Token:
+    def peek(self) -> Token | None:
         if self.is_at_end():
             return None
         return self._tokens[self._current]
+
+    def check(self, expected: TokenType) -> Token | None:
+        token = self.peek()
+        if token and token.token == expected:
+            return token
+        return None
 
     def advance(self) -> Token:
         val = self.peek()
         self._current += 1
         return val
 
-    def match(self, *tokens: TokenType) -> Optional[Token]:
+    def match(self, *tokens: TokenType) -> Token | None:
         token = self.peek()
         if token and token.token in tokens:
             return self.advance()
@@ -156,21 +162,80 @@ def _block(parser: _ParseView) -> Iterable[Stmt]:
         yield _statement(parser)
 
 
+def _print(parser: _ParseView) -> Print:
+    expr = _expression(parser)
+    parser.consume(TokenType.SEMICOLON, "Expect ';' after value.")
+    return Print(expr)
+
+
+def _var_decl(parser: _ParseView) -> Var:
+    name = parser.consume(TokenType.IDENTIFIER, "Expect variable name.")
+
+    initializer = None
+    if parser.match(TokenType.EQUAL):
+        initializer = _expression(parser)
+
+    parser.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
+    return Var(name, initializer)
+
+
+def _if(parser: _ParseView) -> If:
+    parser.consume(TokenType.LEFT_PAREN, "Expect opening '('.")
+    condition = _expression(parser)
+    parser.consume(TokenType.RIGHT_PAREN, "Expect closing ')'.")
+    if_case = _statement(parser)
+    else_case = _statement(parser) if parser.match(TokenType.ELSE) else None
+    return If(condition, if_case, else_case)
+
+
+def _while(parser: _ParseView) -> While:
+    parser.consume(TokenType.LEFT_PAREN, "Expect opening '('.")
+    condition = _expression(parser)
+    parser.consume(TokenType.RIGHT_PAREN, "Expected closing ')'.")
+    body = _statement(parser)
+    return While(condition, body)
+
+
+def _for(parser: _ParseView) -> Stmt:
+    parser.consume(TokenType.LEFT_PAREN, "Expected opening '('.")
+    initializer = None
+    if parser.match(TokenType.SEMICOLON):
+        initializer = None
+    elif parser.match(TokenType.VAR):
+        initializer = _var_decl(parser)
+    else:
+        initializer = _expr_stmt(parser)
+
+    condition = None if parser.check(TokenType.SEMICOLON) else _expression(parser)
+    parser.consume(TokenType.SEMICOLON, "Expected ';'.")
+    increment = None if parser.check(TokenType.RIGHT_PAREN) else _expression(parser)
+    parser.consume(TokenType.RIGHT_PAREN, "Expected closing ')'.")
+
+    body = _statement(parser)
+
+    if increment:
+        body = Block([body, increment])
+
+    loop = While(condition or Literal(True), body)
+
+    if initializer:
+        loop = Block([initializer, loop])
+
+    return loop
+
+
+def _expr_stmt(parser: _ParseView) -> ExprStmt:
+    expr = _expression(parser)
+    parser.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+    return ExprStmt(expr)
+
+
 def _statement(parser: _ParseView) -> Stmt:
     if parser.match(TokenType.PRINT):
-        expr = _expression(parser)
-        parser.consume(TokenType.SEMICOLON, "Expect ';' after value.")
-        return Print(expr)
+        return _print(parser)
 
     if parser.match(TokenType.VAR):
-        name = parser.consume(TokenType.IDENTIFIER, "Expect variable name.")
-
-        initializer = None
-        if parser.match(TokenType.EQUAL):
-            initializer = _expression(parser)
-
-        parser.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
-        return Var(name, initializer)
+        return _var_decl(parser)
 
     if parser.match(TokenType.LEFT_BRACE):
         stmts = list(_block(parser))
@@ -178,23 +243,15 @@ def _statement(parser: _ParseView) -> Stmt:
         return Block(stmts)
 
     if parser.match(TokenType.IF):
-        parser.consume(TokenType.LEFT_PAREN, "Expect opening '('.")
-        condition = _expression(parser)
-        parser.consume(TokenType.RIGHT_PAREN, "Expect closing ')'.")
-        if_case = _statement(parser)
-        else_case = _statement(parser) if parser.match(TokenType.ELSE) else None
-        return If(condition, if_case, else_case)
+        return _if(parser)
 
     if parser.match(TokenType.WHILE):
-        parser.consume(TokenType.LEFT_PAREN, "Expect opening '('.")
-        condition = _expression(parser)
-        parser.consume(TokenType.RIGHT_PAREN, "Expected closing ')'.")
-        body = _statement(parser)
-        return While(condition, body)
+        return _while(parser)
 
-    expr = _expression(parser)
-    parser.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
-    return ExprStmt(expr)
+    if parser.match(TokenType.FOR):
+        return _for(parser)
+
+    return _expr_stmt(parser)
 
 
 def parse_expr(tokens: Iterable[Token]) -> object:

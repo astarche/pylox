@@ -155,3 +155,41 @@ def test_while_zeroiteration(capsys):
     )
 
     _assert_out_lines(capsys, "nil")
+
+
+def test_for(capsys):
+    run(
+        """
+        for (var x = 0; x < 10; x = x + 1) {
+            print x;
+        }
+        """
+    )
+    _assert_out_lines(capsys, *[str(i) for i in range(0, 10)])
+
+
+def test_for_deconstructed(capsys):
+    run(
+        """
+        var x = 0;
+        for (; x < 10;) {
+            print x;
+            x = x + 1;
+        }
+        """
+    )
+    _assert_out_lines(capsys, *[str(i) for i in range(0, 10)])
+
+
+def test_for_empty(capsys):
+    run(
+        """
+        var x = 0;
+        for (;;) {
+            print x;
+            // Bail out of infinite loop with bad var access.
+            print y;
+        }
+        """
+    )
+    _assert_out_lines(capsys, "0", "Error (Unknown): Attempt to access undefined variable y")
