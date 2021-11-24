@@ -1,9 +1,11 @@
-from typing import Iterable
+from dataclasses import dataclass
+from typing import Iterable, List
 
 from pylox.environment import Environment
 from pylox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
+from pylox.scanner import Token
 from pylox.runtime import LoxCallable, runtime_error
-from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var, While
+from pylox.stmt import Block, ExprStmt, Fun, If, Print, Stmt, Var, While
 
 
 def _is_truthy(val: object):
@@ -32,12 +34,12 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
             _interpret(expr, env)
         case Var(name, None):
             env.define(name, None)
+        case Fun(name, params, body):
+            env.define(name, LoxFunction(params, body, env))
         case Var(name, initializer):
             env.define(name, _interpret(initializer, env))
         case Block(stmts):
-            block_env = Environment(env)
-            for stmt in stmts:
-                _interpret(stmt, block_env)
+            interpret_block(stmts, Environment(env))
         case If(condition, if_case, else_case):
             if _interpret(condition, env):
                 _interpret(if_case, env)
@@ -108,9 +110,31 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
             return env.access(name)
 
 
+@dataclass(slots=True)
+class LoxFunction:
+    params: List[Token]
+    body: List[Stmt]
+    env: Environment
+
+    @property
+    def arity(self) -> int:
+        return len(self.params)
+
+    def __call__(self, *args):
+        call_env = Environment(self.env)
+        for token, value in zip(self.params, args):
+            call_env.define(token, value)
+
+        interpret_block(self.body, call_env)
+
+
+def interpret_block(stmts: Iterable[Stmt], env: Environment) -> None:
+    for stmt in stmts:
+        _interpret(stmt, env)
+
+
 def interpret(stmts: Iterable[Stmt], env: Environment) -> None:
     try:
-        for stmt in stmts:
-            _interpret(stmt, env)
+        interpret_block(stmts, env)
     except RuntimeError:
         pass

@@ -3,6 +3,7 @@ from typing import Any
 
 from pylox.error import error
 from pylox.scanner import Token
+from pylox.stmt import Stmt
 
 
 def runtime_error(token: Token, message: str) -> Exception:

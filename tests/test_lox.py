@@ -1,3 +1,5 @@
+import pytest
+
 from pylox.lox import run
 
 
@@ -205,3 +207,36 @@ def test_clock(capsys):
     )
 
     _assert_out_lines(capsys, "true", "true")
+
+
+def test_fun(capsys):
+    run(
+        """
+        fun f(a) { print a + 1; }
+        f(1);
+        """
+    )
+
+    _assert_out_lines(capsys, "2")
+
+
+@pytest.mark.skip(reason="NotImplemented")
+def test_closure(capsys):
+    run(
+        """
+        fun get_counter() {
+            var curr = 0;
+            fun count() {
+                curr = curr + 1;
+                print curr;
+            }
+            return count;
+        }
+        var counter = get_counter();
+        counter();
+        counter();
+        get_counter()();
+        """
+    )
+
+    _assert_out_lines(capsys, "1", "2", "1")

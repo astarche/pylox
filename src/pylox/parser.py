@@ -3,7 +3,7 @@ from typing import Iterable, List
 from pylox.error import error
 from pylox.expr import Assign, Binary, Call, Expr, Grouping, Logical, Unary, Literal, Variable
 from pylox.scanner import Token, TokenType
-from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var, While
+from pylox.stmt import Block, ExprStmt, Fun, If, Print, Stmt, Var, While
 
 
 class ParseError(Exception):
@@ -73,7 +73,7 @@ def _finish_call(parser: _ParseView, callee: Expr):
     args: List[Expr] = []
     if not parser.check(TokenType.RIGHT_PAREN):
         while True:
-            args += _expression()
+            args += [_expression(parser)]
             if parser.check(TokenType.RIGHT_PAREN):
                 break
             parser.consume(TokenType.COMMA, "Expected ','.")
@@ -248,6 +248,24 @@ def _for(parser: _ParseView) -> Stmt:
     return loop
 
 
+def _fun(parser: _ParseView) -> Fun:
+    name = parser.consume(TokenType.IDENTIFIER, "Expected function name.")
+    parser.consume(TokenType.LEFT_PAREN, "Expected '('.")
+    params: List[Token] = []
+    if not parser.check(TokenType.RIGHT_PAREN):
+        while True:
+            params += [parser.consume(TokenType.IDENTIFIER, "Expected identifier.")]
+            if parser.check(TokenType.RIGHT_PAREN):
+                break
+            parser.consume(TokenType.COMMA, "Expected ','.")
+
+    parser.consume(TokenType.RIGHT_PAREN, "Expected ')'.")
+    parser.consume(TokenType.LEFT_BRACE, "Expected '{'.")
+    body = list(_block(parser))
+    parser.consume(TokenType.RIGHT_BRACE, "Expected '}'.")
+    return Fun(name, params, body)
+
+
 def _expr_stmt(parser: _ParseView) -> ExprStmt:
     expr = _expression(parser)
     parser.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
@@ -274,6 +292,9 @@ def _statement(parser: _ParseView) -> Stmt:
 
     if parser.match(TokenType.FOR):
         return _for(parser)
+
+    if parser.match(TokenType.FUN):
+        return _fun(parser)
 
     return _expr_stmt(parser)
 

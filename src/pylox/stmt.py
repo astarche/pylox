@@ -46,4 +46,5 @@ class While(Stmt):
 @dataclass(slots=True)
 class Fun(Stmt):
     name: Token
+    params: List[Token]
     body: List[Stmt]
