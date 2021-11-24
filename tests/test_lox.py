@@ -104,3 +104,29 @@ def test_ifelse(capsys):
     )
 
     _assert_out_lines(capsys, "TRUE", "Not 2", "Done")
+
+
+def test_andor(capsys):
+    run(
+        """
+        var x;
+        print "Hello" or (x = 2);
+        print x;
+        print nil and (x = 3);
+        print x;
+        print false or (x = 4);
+        print x;
+        print "5" and (x = "Hello");
+        print x;
+        x = x and "World";
+        print x;
+        var y = true;
+        x = y or nil;
+        print x;
+        y = false;
+        print x and 1 or nil and y;
+        """
+    )
+    _assert_out_lines(
+        capsys, "Hello", "nil", "nil", "nil", "4", "4", "Hello", "Hello", "World", "true", "1"
+    )

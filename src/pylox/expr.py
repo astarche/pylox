@@ -39,3 +39,10 @@ class Variable(Expr):
 class Assign(Expr):
     name: str
     value: Expr
+
+
+@dataclass(slots=True)
+class Logical(Expr):
+    left: Expr
+    operator: Token
+    right: Expr

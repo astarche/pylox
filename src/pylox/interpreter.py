@@ -1,7 +1,7 @@
 from typing import Iterable
 
 from pylox.environment import Environment
-from pylox.expr import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
+from pylox.expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
 from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var
 
 
@@ -61,6 +61,16 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
                     return not _is_truthy(rhs)
                 case "-":
                     return -rhs
+        case Logical(left, operator, right):
+            lhs = _interpret(left, env)
+            match operator.lexeme:
+                case "and":
+                    if not _is_truthy(lhs):
+                        return lhs
+                case "or":
+                    if _is_truthy(lhs):
+                        return lhs
+            return _interpret(right, env)
         case Grouping(expr):
             return _interpret(expr, env)
         case Assign(name, val_expr):

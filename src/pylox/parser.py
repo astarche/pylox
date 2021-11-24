@@ -1,7 +1,7 @@
 from typing import Iterable, Optional
 
 from pylox.error import error
-from pylox.expr import Assign, Binary, Expr, Grouping, Unary, Literal, Variable
+from pylox.expr import Assign, Binary, Expr, Grouping, Logical, Unary, Literal, Variable
 from pylox.scanner import Token, TokenType
 from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var
 
@@ -113,8 +113,26 @@ def _equality(parser: _ParseView) -> Expr:
     return expr
 
 
-def _assignment(parser: _ParseView) -> Expr:
+def _and(parser: _ParseView) -> Expr:
     expr = _equality(parser)
+
+    while operator := parser.match(TokenType.AND):
+        right = _equality(parser)
+        expr = Logical(expr, operator, right)
+
+    return expr
+
+def _or(parser: _ParseView) -> Expr:
+    expr = _and(parser)
+
+    while operator := parser.match(TokenType.OR):
+        right = _and(parser)
+        expr = Logical(expr, operator, right)
+
+    return expr
+
+def _assignment(parser: _ParseView) -> Expr:
+    expr = _or(parser)
 
     if equals := parser.match(TokenType.EQUAL):
         value = _assignment(parser)
