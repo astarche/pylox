@@ -6,6 +6,11 @@ def _assert_std_out(capsys, expected):
     assert captured.out == expected
 
 
+def _assert_out_lines(capsys, *expected_lines):
+    expected = "\n".join(expected_lines) + "\n"
+    _assert_std_out(capsys, expected)
+
+
 def test_helloworld(capsys):
     run('print "Hello World";')
 
@@ -73,3 +78,29 @@ def test_block(capsys):
     )
 
     _assert_std_out(capsys, "5\n15\n5\n1\n")
+
+
+def test_ifelse(capsys):
+    run(
+        """
+        var x = 1;
+        if (x) {
+            print "TRUE";
+        }
+
+        if (x == 2) {
+            print "Ack!";
+        }
+        else {
+            print "Not 2";
+        }
+
+        var y = nil;
+        if (y) {
+            print "Ack null not true";
+        }
+        print "Done";
+        """
+    )
+
+    _assert_out_lines(capsys, "TRUE", "Not 2", "Done")

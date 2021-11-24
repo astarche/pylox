@@ -3,7 +3,7 @@ from typing import Iterable, Optional
 from pylox.error import error
 from pylox.expr import Assign, Binary, Expr, Grouping, Unary, Literal, Variable
 from pylox.scanner import Token, TokenType
-from pylox.stmt import Block, ExprStmt, Print, Stmt, Var
+from pylox.stmt import Block, ExprStmt, If, Print, Stmt, Var
 
 
 class ParseError(Exception):
@@ -156,6 +156,14 @@ def _statement(parser: _ParseView) -> Stmt:
         stmts = list(_block(parser))
         parser.consume(TokenType.RIGHT_BRACE, "Expect closing '}'.")
         return Block(stmts)
+
+    if parser.match(TokenType.IF):
+        parser.consume(TokenType.LEFT_PAREN, "Expect opening '('.")
+        condition = _expression(parser)
+        parser.consume(TokenType.RIGHT_PAREN, "Expect closing ')'.")
+        if_case = _statement(parser)
+        else_case = _statement(parser) if parser.match(TokenType.ELSE) else None
+        return If(condition, if_case, else_case)
 
     expr = _expression(parser)
     parser.consume(TokenType.SEMICOLON, "Expect ';' after expression.")

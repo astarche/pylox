@@ -28,3 +28,10 @@ class Var(Stmt):
 @dataclass(slots=True)
 class Block(Stmt):
     stmts: List[Stmt]
+
+
+@dataclass(slots=True)
+class If(Stmt):
+    condition: Expr
+    if_case: Stmt
+    else_case: Stmt
