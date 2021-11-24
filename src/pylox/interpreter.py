@@ -2,7 +2,18 @@ from dataclasses import dataclass
 from typing import Any, Any, Iterable, List
 
 from pylox.environment import Environment
-from pylox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
+from pylox.expr import (
+    Assign,
+    Binary,
+    Call,
+    Expr,
+    Grouping,
+    Lambda,
+    Literal,
+    Logical,
+    Unary,
+    Variable,
+)
 from pylox.scanner import Token
 from pylox.runtime import LoxCallable, runtime_error
 from pylox.stmt import Block, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
@@ -117,6 +128,8 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
             return val
         case Variable(name):
             return env.access(name)
+        case Lambda(_, params, body):
+            return LoxFunction(params, body, env)
 
 
 @dataclass(slots=True)

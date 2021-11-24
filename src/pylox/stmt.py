@@ -1,12 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
-from pylox.expr import Expr
+from pylox.iexpr import Expr, Stmt
 from pylox.scanner import Token
-
-
-class Stmt:
-    pass
 
 
 @dataclass(slots=True)

@@ -1,7 +1,18 @@
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 
 from pylox.error import error
-from pylox.expr import Assign, Binary, Call, Expr, Grouping, Logical, Unary, Literal, Variable
+from pylox.expr import (
+    Assign,
+    Binary,
+    Call,
+    Expr,
+    Grouping,
+    Lambda,
+    Logical,
+    Unary,
+    Literal,
+    Variable,
+)
 from pylox.scanner import Token, TokenType
 from pylox.stmt import Block, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
 
@@ -27,6 +38,12 @@ class _ParseView:
         token = self.peek()
         if token and token.token == expected:
             return token
+        return None
+
+    def check_ahead(self, n: int, expected: TokenType) -> Token | None:
+        i = self._current + n
+        if i <= len(self._tokens) and self._tokens[i].token == expected:
+            return self._tokens[i]
         return None
 
     def advance(self) -> Token:
@@ -67,6 +84,9 @@ def _primary(parser: _ParseView) -> Expr:
         return Grouping(expr)
     if identifier := parser.match(TokenType.IDENTIFIER):
         return Variable(identifier)
+    if fun := parser.match(TokenType.FUN):
+        params, body = _parse_fun_defn(parser)
+        return Lambda(fun, params, body)
 
 
 def _finish_call(parser: _ParseView, callee: Expr):
@@ -248,8 +268,7 @@ def _for(parser: _ParseView) -> Stmt:
     return loop
 
 
-def _fun(parser: _ParseView) -> Fun:
-    name = parser.consume(TokenType.IDENTIFIER, "Expected function name.")
+def _parse_fun_defn(parser: _ParseView) -> Tuple[List[Token], List[Stmt]]:
     parser.consume(TokenType.LEFT_PAREN, "Expected '('.")
     params: List[Token] = []
     if not parser.check(TokenType.RIGHT_PAREN):
@@ -263,6 +282,13 @@ def _fun(parser: _ParseView) -> Fun:
     parser.consume(TokenType.LEFT_BRACE, "Expected '{'.")
     body = list(_block(parser))
     parser.consume(TokenType.RIGHT_BRACE, "Expected '}'.")
+
+    return params, body
+
+
+def _fun(parser: _ParseView) -> Fun:
+    name = parser.consume(TokenType.IDENTIFIER, "Expected function name.")
+    params, body = _parse_fun_defn(parser)
     return Fun(name, params, body)
 
 
@@ -302,7 +328,7 @@ def _statement(parser: _ParseView) -> Stmt:
 
 
 def _declaration(parser: _ParseView) -> Stmt:
-    if parser.match(TokenType.FUN):
+    if parser.check_ahead(1, TokenType.IDENTIFIER) and parser.match(TokenType.FUN):
         return _fun(parser)
 
     if parser.match(TokenType.VAR):

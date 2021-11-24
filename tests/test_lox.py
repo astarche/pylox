@@ -270,3 +270,50 @@ def test_closure(capsys):
     )
 
     _assert_out_lines(capsys, "1", "2", "1")
+
+
+def test_lambda(capsys):
+    run(
+        """
+        var f = fun (a) { print a + 2; };
+        f(2);
+        """
+    )
+
+    _assert_out_lines(capsys, "4")
+
+
+def test_lambda_stmtexpr(capsys):
+    run(
+        """
+        fun (x, y) { print x + y; }(1, 2);
+        """
+    )
+
+    _assert_out_lines(capsys, "3")
+
+
+def test_recursive_lambda(capsys):
+    run(
+        """
+        var f;
+        f = fun (x, y) {
+            if (x == y) print "match";
+            else {
+                if (x > y) {
+                    f(2, 2);
+                    f = fun (x) { print x; };
+                    f(x);
+                }
+                else {
+                    print y;
+                    f(y, x);
+                }
+            }
+        };
+
+        f(2, 3);
+        """
+    )
+
+    _assert_out_lines(capsys, "3", "match", "3")
