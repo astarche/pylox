@@ -183,7 +183,7 @@ def _expression(parser: _ParseView) -> Expr:
 
 def _block(parser: _ParseView) -> Iterable[Stmt]:
     while not (parser.is_at_end() or parser.peek().token == TokenType.RIGHT_BRACE):
-        yield _statement(parser)
+        yield _declaration(parser)
 
 
 def _print(parser: _ParseView) -> Print:
@@ -281,9 +281,6 @@ def _statement(parser: _ParseView) -> Stmt:
     if parser.match(TokenType.PRINT):
         return _print(parser)
 
-    if parser.match(TokenType.VAR):
-        return _var_decl(parser)
-
     if parser.match(TokenType.LEFT_BRACE):
         stmts = list(_block(parser))
         parser.consume(TokenType.RIGHT_BRACE, "Expect closing '}'.")
@@ -298,13 +295,20 @@ def _statement(parser: _ParseView) -> Stmt:
     if parser.match(TokenType.FOR):
         return _for(parser)
 
-    if parser.match(TokenType.FUN):
-        return _fun(parser)
-
     if keyword := parser.match(TokenType.RETURN):
         return _return(parser, keyword)
 
     return _expr_stmt(parser)
+
+
+def _declaration(parser: _ParseView) -> Stmt:
+    if parser.match(TokenType.FUN):
+        return _fun(parser)
+
+    if parser.match(TokenType.VAR):
+        return _var_decl(parser)
+
+    return _statement(parser)
 
 
 def parse_expr(tokens: Iterable[Token]) -> object:
@@ -316,6 +320,6 @@ def parse(tokens: Iterable[Token]) -> Iterable[Stmt]:
 
     try:
         while not parser.is_at_end():
-            yield _statement(parser)
+            yield _declaration(parser)
     except ParseError:
         pass
