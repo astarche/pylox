@@ -55,7 +55,7 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
         case Var(name, initializer):
             env.define(name, _interpret(initializer, env))
         case Block(stmts):
-            interpret_block(stmts, Environment(env))
+            interpret_block(stmts, env.create_child())
         case If(condition, if_case, else_case):
             if _interpret(condition, env):
                 _interpret(if_case, env)
@@ -122,12 +122,12 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
             return func(*[_interpret(a, env) for a in arg_exprs])
         case Grouping(expr):
             return _interpret(expr, env)
-        case Assign(name, val_expr):
+        case Assign(name, val_expr) as assign_var:
             val = _interpret(val_expr, env)
-            env.assign(name, val)
+            env.assign(assign_var, val)
             return val
-        case Variable(name):
-            return env.access(name)
+        case Variable(name) as var:
+            return env.access(var)
         case Lambda(_, params, body):
             return LoxFunction(params, body, env)
 
@@ -143,7 +143,7 @@ class LoxFunction:
         return len(self.params)
 
     def __call__(self, *args):
-        call_env = Environment(self.env)
+        call_env = self.env.create_child()
         for token, value in zip(self.params, args):
             call_env.define(token, value)
 

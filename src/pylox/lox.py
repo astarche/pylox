@@ -4,13 +4,16 @@ from pylox.environment import Environment, init_global_env
 
 from pylox.parser import parse
 from pylox.interpreter import interpret
+from pylox.resolver import resolve
 from pylox.scanner import scan_tokens
 
 
 def run(input: str, env: Environment = None) -> None:
     env = env or init_global_env()
     tokens = scan_tokens(input)
-    program = parse(tokens)
+    program = list(parse(tokens))
+    bindings = resolve(program)
+    env.merge_bindings(bindings)
     interpret(program, env)
 
 

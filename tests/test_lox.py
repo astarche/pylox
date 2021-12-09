@@ -70,7 +70,7 @@ def test_block(capsys):
             var x = 5;
             print x;
             {
-                var x = x + 10;
+                var x = 15;
                 print x;
             }
             print x;
@@ -79,7 +79,7 @@ def test_block(capsys):
         """
     )
 
-    _assert_std_out(capsys, "5\n15\n5\n1\n")
+    _assert_out_lines(capsys, "5", "15", "5", "1")
 
 
 def test_ifelse(capsys):
@@ -317,3 +317,33 @@ def test_recursive_lambda(capsys):
     )
 
     _assert_out_lines(capsys, "3", "match", "3")
+
+
+def test_binding_shadow_after_reference(capsys):
+    run(
+        """
+        var x = 10;
+        {
+            var y = x;
+            var x = 11;
+            print y;
+            print x;
+        }
+        print x;
+        """
+    )
+
+    _assert_out_lines(capsys, "10", "11", "10")
+
+
+def test_self_reference_from_definition(capsys):
+    run(
+        """
+        var y = 10;
+        {
+            var y = y + 1;
+        }
+        """
+    )
+
+    _assert_out_lines(capsys, "Error (4): Cannot bind reference to y during definition.")

@@ -32,9 +32,9 @@ def test_parse_numbers():
 def test_parse_strings():
     tokens = list(scan_tokens('"Hello" + "World"'))
     expected = [
-        Token(TokenType.STRING, '"Hello"', "Hello", 1),
-        Token(TokenType.PLUS, "+", None, 1),
-        Token(TokenType.STRING, '"World"', "World", 1),
+        Token(TokenType.STRING, '"Hello"', "Hello", 1, 0),
+        Token(TokenType.PLUS, "+", None, 1, 8),
+        Token(TokenType.STRING, '"World"', "World", 1, 10),
     ]
 
     assert tokens == expected

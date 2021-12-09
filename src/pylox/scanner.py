@@ -67,18 +67,19 @@ KEYWORDS = {
 }
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, eq=True, frozen=True)
 class Token:
     token: TokenType
     lexeme: str
     literal: object
     line: int
+    index: int
 
 
 class _ScanView:
     def __init__(self, input: str):
         self._input = input
-        self._start = 0
+        self.start = 0
         self._current = 0
         self.line = 1
 
@@ -116,11 +117,11 @@ class _ScanView:
         return False
 
     def start_token(self) -> None:
-        self._start = self._current
+        self.start = self._current
 
     @property
     def token(self) -> str:
-        return self._input[self._start : self._current]
+        return self._input[self.start : self._current]
 
 
 def _is_digit(val: str):
@@ -139,7 +140,7 @@ def scan_tokens(input: str) -> Iterable[Token]:
     scan = _ScanView(input)
 
     def create_token(type, literal=None) -> Token:
-        return Token(type, scan.token, literal, scan.line)
+        return Token(type, scan.token, literal, scan.line, scan.start)
 
     while not scan.is_at_end():
         scan.start_token()
