@@ -16,7 +16,7 @@ from pylox.expr import (
 )
 from pylox.scanner import Token
 from pylox.runtime import LoxCallable, runtime_error
-from pylox.stmt import Block, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
+from pylox.stmt import Block, Class, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
 
 
 def _is_truthy(val: object):
@@ -50,10 +50,14 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
             _interpret(expr, env)
         case Var(name, None):
             env.define(name, None)
-        case Fun(name, params, body):
-            env.define(name, LoxFunction(params, body, env))
         case Var(name, initializer):
             env.define(name, _interpret(initializer, env))
+        case Class(name, methods) as class_expr:
+            env.define(name, None)
+            klass = LoxClass(name.lexeme)
+            env.assign(class_expr, klass)
+        case Fun(name, params, body):
+            env.define(name, LoxFunction(params, body, env))
         case Block(stmts):
             interpret_block(stmts, env.create_child())
         case If(condition, if_case, else_case):
@@ -130,6 +134,29 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
             return env.access(var)
         case Lambda(_, params, body):
             return LoxFunction(params, body, env)
+
+
+@dataclass(slots=True)
+class LoxClass:
+    name: str
+
+    @property
+    def arity(self) -> int:
+        return 0
+
+    def __call__(self, *args):
+        return LoxInstance(self)
+
+    def __str__(self):
+        return self.name
+
+
+@dataclass(slots=True)
+class LoxInstance:
+    klass: LoxClass
+
+    def __str__(self):
+        return self.klass.name + " instance"
 
 
 @dataclass(slots=True)

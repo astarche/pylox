@@ -14,7 +14,7 @@ from pylox.expr import (
     Variable,
 )
 from pylox.scanner import Token, TokenType
-from pylox.stmt import Block, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
+from pylox.stmt import Block, Class, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
 
 
 class ParseError(Exception):
@@ -292,6 +292,19 @@ def _fun(parser: _ParseView) -> Fun:
     return Fun(name, params, body)
 
 
+def _class_decl(parser: _ParseView) -> Class:
+    name = parser.consume(TokenType.IDENTIFIER, "Expected class name.")
+    parser.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+
+    methods: List[Fun] = []
+    while not parser.check(TokenType.RIGHT_BRACE):
+        methods.append(_fun(parser))
+
+    parser.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+
+    return Class(name, methods)
+
+
 def _return(parser: _ParseView, keyword: Token) -> Return:
     expr = None if parser.check(TokenType.SEMICOLON) else _expression(parser)
     return Return(keyword, expr)
@@ -328,6 +341,8 @@ def _statement(parser: _ParseView) -> Stmt:
 
 
 def _declaration(parser: _ParseView) -> Stmt:
+    if parser.match(TokenType.CLASS):
+        return _class_decl(parser)
     if parser.check_ahead(1, TokenType.IDENTIFIER) and parser.match(TokenType.FUN):
         return _fun(parser)
 

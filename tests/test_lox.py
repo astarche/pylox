@@ -347,3 +347,15 @@ def test_self_reference_from_definition(capsys):
     )
 
     _assert_out_lines(capsys, "Error (4): Cannot bind reference to y during definition.")
+
+
+def test_print_class(capsys):
+    run(
+        """
+        class T {}
+        print T;
+        print T();
+        """
+    )
+
+    _assert_out_lines(capsys, "T", "T instance")

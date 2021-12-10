@@ -7,7 +7,7 @@ from pylox.error import error
 from pylox.expr import Assign, Lambda, Variable
 from pylox.iexpr import Expr, NamedExpr, Stmt
 from pylox.scanner import Token
-from pylox.stmt import Block, Fun, Var
+from pylox.stmt import Block, Class, Fun, Var
 from pylox.traversal import visit_children
 
 
@@ -93,6 +93,9 @@ def _resolve(expr_or_stmt: Expr | Stmt, context: _ResolveContext):
         case Assign(name, _) as assignment:
             _bind(assignment, context)
             _resolve_children(expr_or_stmt, context)
+        case Class(name, _):
+            _declare(name, context)
+            _define(name, context)
         case Fun(name, params, _):
             _declare(name, context)
             _define(name, context)

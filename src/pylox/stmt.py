@@ -47,6 +47,12 @@ class Fun(Stmt):
 
 
 @dataclass(slots=True, eq=True, frozen=True)
+class Class(Stmt):
+    name: Token
+    methods: List[Fun]
+
+
+@dataclass(slots=True, eq=True, frozen=True)
 class Return(Stmt):
     keyword: Token
     value: Expr
