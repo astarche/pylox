@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Any, Any, Iterable, List
+from dataclasses import dataclass, field
+from typing import Any, Any, Dict, Iterable, List
 
 from pylox.environment import Environment
 from pylox.expr import (
@@ -7,12 +7,14 @@ from pylox.expr import (
     Binary,
     Call,
     Expr,
+    Get,
     Grouping,
     Lambda,
     Literal,
     Logical,
     Unary,
     Variable,
+    Set,
 )
 from pylox.scanner import Token
 from pylox.runtime import LoxCallable, runtime_error
@@ -134,6 +136,18 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
             return env.access(var)
         case Lambda(_, params, body):
             return LoxFunction(params, body, env)
+        case Get(obj_expr, name):
+            obj_val = _interpret(obj_expr, env)
+            if isinstance(obj_val, LoxInstance):
+                return obj_val[name]
+            else:
+                raise runtime_error(name, "Only instances have fields.")
+        case Set(obj_expr, name, val_expr):
+            obj_val = _interpret(obj_expr, env)
+            if isinstance(obj_val, LoxInstance):
+                obj_val[name] = _interpret(val_expr, env)
+            else:
+                raise runtime_error(name, "Only instances have fields.")
 
 
 @dataclass(slots=True)
@@ -154,6 +168,16 @@ class LoxClass:
 @dataclass(slots=True)
 class LoxInstance:
     klass: LoxClass
+    fields: Dict[str, Any] = field(default_factory=dict)
+
+    def __getitem__(self, key: Token):
+        key_str = key.lexeme
+        if key_str in self.fields:
+            return self.fields[key_str]
+        raise runtime_error(key, "Undefined property.")
+
+    def __setitem__(self, key: Token, value):
+        self.fields[key.lexeme] = value
 
     def __str__(self):
         return self.klass.name + " instance"

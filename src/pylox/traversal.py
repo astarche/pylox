@@ -5,10 +5,12 @@ from pylox.expr import (
     Binary,
     Call,
     Expr,
+    Get,
     Grouping,
     Lambda,
     Literal,
     Logical,
+    Set,
     Unary,
     Variable,
 )
@@ -73,5 +75,10 @@ def visit_children(expr_or_stmt: Expr | Stmt, visit: Visitor) -> None:
         case Lambda(_, _, body):
             for stmt in body:
                 visit(stmt)
+        case Get(obj, _):
+            visit(obj)
+        case Set(obj, _, value):
+            visit(obj)
+            visit(value)
         case _:
             raise TraversalException("Unhandled expr_or_stmt", expr_or_stmt)

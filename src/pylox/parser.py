@@ -6,12 +6,14 @@ from pylox.expr import (
     Binary,
     Call,
     Expr,
+    Get,
     Grouping,
     Lambda,
     Logical,
     Unary,
     Literal,
     Variable,
+    Set
 )
 from pylox.scanner import Token, TokenType
 from pylox.stmt import Block, Class, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
@@ -107,6 +109,9 @@ def _call(parser: _ParseView) -> Expr:
     while True:
         if parser.match(TokenType.LEFT_PAREN):
             expr = _finish_call(parser, expr)
+        elif parser.match(TokenType.DOT):
+            name = parser.consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
+            expr = Get(expr, name)
         else:
             break
 
@@ -191,6 +196,8 @@ def _assignment(parser: _ParseView) -> Expr:
 
         if isinstance(expr, Variable):
             return Assign(expr.name, value)
+        elif isinstance(expr, Get):
+            return Set(expr.object, expr.name, value)
 
         parser._error(equals, "Invalid assignment target")
 

@@ -58,3 +58,16 @@ class Lambda(Expr):
     keyword: Token
     params: List[Token]
     body: List[Stmt]
+
+
+@dataclass(slots=True, eq=True, frozen=True)
+class Get(Expr):
+    object: Expr
+    name: Token
+
+
+@dataclass(slots=True, eq=True, frozen=True)
+class Set(Expr):
+    object: Expr
+    name: Token
+    value: Expr

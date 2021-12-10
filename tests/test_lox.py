@@ -359,3 +359,16 @@ def test_print_class(capsys):
     )
 
     _assert_out_lines(capsys, "T", "T instance")
+
+
+def test_class_fields(capsys):
+    run(
+        """
+        class T {}
+        var o = T();
+        o.test = "val";
+        print o.test;
+        """
+    )
+
+    _assert_out_lines(capsys, "val")
