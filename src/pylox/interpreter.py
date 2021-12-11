@@ -12,6 +12,7 @@ from pylox.expr import (
     Lambda,
     Literal,
     Logical,
+    This,
     Unary,
     Variable,
     Set,
@@ -54,9 +55,12 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
             env.define(name, None)
         case Var(name, initializer):
             env.define(name, _interpret(initializer, env))
-        case Class(name, methods) as class_expr:
+        case Class(name, method_stmts) as class_expr:
             env.define(name, None)
-            klass = LoxClass(name.lexeme)
+            methods: Dict[str, LoxFunction] = {}
+            for method in method_stmts:
+                methods[method.name.lexeme] = LoxFunction(method.params, method.body, env)
+            klass = LoxClass(name.lexeme, methods)
             env.assign(class_expr, klass)
         case Fun(name, params, body):
             env.define(name, LoxFunction(params, body, env))
@@ -148,39 +152,8 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
                 obj_val[name] = _interpret(val_expr, env)
             else:
                 raise runtime_error(name, "Only instances have fields.")
-
-
-@dataclass(slots=True)
-class LoxClass:
-    name: str
-
-    @property
-    def arity(self) -> int:
-        return 0
-
-    def __call__(self, *args):
-        return LoxInstance(self)
-
-    def __str__(self):
-        return self.name
-
-
-@dataclass(slots=True)
-class LoxInstance:
-    klass: LoxClass
-    fields: Dict[str, Any] = field(default_factory=dict)
-
-    def __getitem__(self, key: Token):
-        key_str = key.lexeme
-        if key_str in self.fields:
-            return self.fields[key_str]
-        raise runtime_error(key, "Undefined property.")
-
-    def __setitem__(self, key: Token, value):
-        self.fields[key.lexeme] = value
-
-    def __str__(self):
-        return self.klass.name + " instance"
+        case This(_) as this_expr:
+            return env.access(this_expr)
 
 
 @dataclass(slots=True)
@@ -203,6 +176,50 @@ class LoxFunction:
         except _ReturnValue as ret:
             return ret.value
         return None
+
+
+@dataclass(slots=True)
+class LoxClass:
+    name: str
+    methods: Dict[str, LoxFunction]
+
+    @property
+    def arity(self) -> int:
+        return 0
+
+    def __call__(self, *args):
+        return LoxInstance(self)
+
+    def __str__(self):
+        return self.name
+
+
+@dataclass(slots=True)
+class LoxInstance:
+    klass: LoxClass
+    fields: Dict[str, Any] = field(default_factory=dict)
+
+    def __getitem__(self, key: Token):
+        key_str = key.lexeme
+        if key_str in self.fields:
+            return self.fields[key_str]
+
+        if key_str in self.klass.methods:
+            return _bind(self.klass.methods[key_str], self)
+
+        raise runtime_error(key, "Undefined property.")
+
+    def __setitem__(self, key: Token, value):
+        self.fields[key.lexeme] = value
+
+    def __str__(self):
+        return self.klass.name + " instance"
+
+
+def _bind(function: LoxFunction, instance: LoxInstance):
+    env = function.env.create_child()
+    env.define("this", instance)
+    return LoxFunction(function.params, function.body, env)
 
 
 def interpret_block(stmts: Iterable[Stmt], env: Environment) -> None:

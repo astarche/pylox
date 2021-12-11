@@ -372,3 +372,34 @@ def test_class_fields(capsys):
     )
 
     _assert_out_lines(capsys, "val")
+
+
+def test_class_methods(capsys):
+    run(
+        """
+        class T {
+            hello() { print "hello"; }
+            get() { return "got it"; }
+        }
+        var o = T();
+        o.hello();
+        print(o.get());
+        """
+    )
+
+    _assert_out_lines(capsys, "hello", "got it")
+
+
+def test_this(capsys):
+    run(
+        """
+        class T {
+            hello() { print "hello"; }
+            callHello() { this.hello(); }
+        }
+        var o = T();
+        o.callHello();
+        """
+    )
+
+    _assert_out_lines(capsys, "hello")

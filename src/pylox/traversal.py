@@ -1,4 +1,4 @@
-from typing import Callable, TypeVar
+from typing import Callable
 
 from pylox.expr import (
     Assign,
@@ -11,11 +11,12 @@ from pylox.expr import (
     Literal,
     Logical,
     Set,
+    This,
     Unary,
     Variable,
 )
 from pylox.iexpr import Expr, Stmt
-from pylox.stmt import Block, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
+from pylox.stmt import Block, Class, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
 
 
 Visitor = Callable[[Expr | Stmt], None]
@@ -35,6 +36,9 @@ def visit_children(expr_or_stmt: Expr | Stmt, visit: Visitor) -> None:
         case Fun(_, _, body):
             for stmt in body:
                 visit(stmt)
+        case Class(_, methods):
+            for method in methods:
+                visit(method)
         case Var(_, initializer):
             if initializer:
                 visit(initializer)
@@ -71,6 +75,8 @@ def visit_children(expr_or_stmt: Expr | Stmt, visit: Visitor) -> None:
         case Assign(_, val_expr):
             visit(val_expr)
         case Variable(_):
+            pass
+        case This(_):
             pass
         case Lambda(_, _, body):
             for stmt in body:

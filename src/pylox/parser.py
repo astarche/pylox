@@ -10,10 +10,11 @@ from pylox.expr import (
     Grouping,
     Lambda,
     Logical,
+    This,
     Unary,
     Literal,
     Variable,
-    Set
+    Set,
 )
 from pylox.scanner import Token, TokenType
 from pylox.stmt import Block, Class, ExprStmt, Fun, If, Print, Return, Stmt, Var, While
@@ -76,6 +77,8 @@ def _primary(parser: _ParseView) -> Expr:
         return Literal(True)
     if parser.match(TokenType.FALSE):
         return Literal(False)
+    if token := parser.match(TokenType.THIS):
+        return This(token)
     if parser.match(TokenType.NIL):
         return Literal(None)
     if token := parser.match(TokenType.NUMBER, TokenType.STRING):

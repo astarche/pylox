@@ -71,3 +71,8 @@ class Set(Expr):
     object: Expr
     name: Token
     value: Expr
+
+
+@dataclass(slots=True, eq=True, frozen=True)
+class This(Expr):
+    name: Token

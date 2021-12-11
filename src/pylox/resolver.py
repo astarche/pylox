@@ -4,7 +4,7 @@ from enum import Enum, auto
 from typing import Dict, Iterable, List
 
 from pylox.error import error
-from pylox.expr import Assign, Lambda, Variable
+from pylox.expr import Assign, Lambda, This, Variable
 from pylox.iexpr import Expr, NamedExpr, Stmt
 from pylox.scanner import Token
 from pylox.stmt import Block, Class, Fun, Var
@@ -96,6 +96,9 @@ def _resolve(expr_or_stmt: Expr | Stmt, context: _ResolveContext):
         case Class(name, _):
             _declare(name, context)
             _define(name, context)
+            with _enter_scope(context):
+                context.scopes[-1]["this"] = _DefinedState.DEFINED
+                _resolve_children(expr_or_stmt, context)
         case Fun(name, params, _):
             _declare(name, context)
             _define(name, context)
@@ -110,6 +113,8 @@ def _resolve(expr_or_stmt: Expr | Stmt, context: _ResolveContext):
                     _declare(p, context)
                     _define(p, context)
                 _resolve_children(expr_or_stmt, context)
+        case This(_) as this:
+            _bind(this, context)
         case _:
             _resolve_children(expr_or_stmt, context)
 

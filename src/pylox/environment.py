@@ -1,6 +1,6 @@
 from time import time
 from typing import Dict, List
-from pylox.iexpr import Expr, NamedExpr
+from pylox.iexpr import NamedExpr
 from pylox.resolver import Bindings
 
 from pylox.runtime import runtime_error
