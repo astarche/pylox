@@ -436,3 +436,49 @@ def test_inherit_method(capsys):
     _assert_out_lines(
         capsys, "hello", "childHello", "hello", "grandChildHello", "childHello", "childHello"
     )
+
+
+def test_constructor(capsys):
+    run(
+        """
+        class T {
+            init(x, y) {
+                print x;
+                this.y = y;
+            }
+
+            printY() {
+                print this.y;
+            }
+        }
+
+        var o = T("Hello", "World");
+        o.printY();
+        """
+    )
+
+    _assert_out_lines(capsys, "Hello", "World")
+
+
+def test_parent_constructor(capsys):
+    run(
+        """
+        class T {
+            init(x, y) {
+                print x;
+                this.y = y;
+            }
+
+            printY() {
+                print this.y;
+            }
+        }
+
+        class D < T { }
+
+        var o = D("Hello", "World");
+        o.printY();
+        """
+    )
+
+    _assert_out_lines(capsys, "Hello", "World")

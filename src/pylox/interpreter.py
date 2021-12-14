@@ -185,12 +185,21 @@ class LoxClass:
     superclass: Any  # LoxClass
     methods: Dict[str, LoxFunction]
 
+    def _init_method(self) -> LoxFunction | None:
+        return _lookup_method(self, "init")
+
     @property
     def arity(self) -> int:
+        if init := self._init_method():
+            return init.arity
         return 0
 
     def __call__(self, *args):
-        return LoxInstance(self)
+        instance = LoxInstance(self)
+        if init := self._init_method():
+            init = _bind(self._init_method(), instance)
+            init(*args)
+        return instance
 
     def __str__(self):
         return self.name
@@ -225,7 +234,7 @@ class LoxInstance:
         return self.klass.name + " instance"
 
 
-def _bind(function: LoxFunction, instance: LoxInstance):
+def _bind(function: LoxFunction, instance: LoxInstance) -> LoxFunction:
     env = function.env.create_child()
     env.define("this", instance)
     return LoxFunction(function.params, function.body, env)
