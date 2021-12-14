@@ -36,7 +36,7 @@ def visit_children(expr_or_stmt: Expr | Stmt, visit: Visitor) -> None:
         case Fun(_, _, body):
             for stmt in body:
                 visit(stmt)
-        case Class(_, methods):
+        case Class(_, _, methods):
             for method in methods:
                 visit(method)
         case Var(_, initializer):

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
+from pylox.expr import Variable
 from pylox.iexpr import Expr, Stmt
 from pylox.scanner import Token
 
@@ -49,6 +50,7 @@ class Fun(Stmt):
 @dataclass(slots=True, eq=True, frozen=True)
 class Class(Stmt):
     name: Token
+    superclass: Variable
     methods: List[Fun]
 
 

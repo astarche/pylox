@@ -55,12 +55,13 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
             env.define(name, None)
         case Var(name, initializer):
             env.define(name, _interpret(initializer, env))
-        case Class(name, method_stmts) as class_expr:
+        case Class(name, superclass_var, method_stmts) as class_expr:
             env.define(name, None)
+            superclass = _interpret(superclass_var, env)
             methods: Dict[str, LoxFunction] = {}
             for method in method_stmts:
                 methods[method.name.lexeme] = LoxFunction(method.params, method.body, env)
-            klass = LoxClass(name.lexeme, methods)
+            klass = LoxClass(name.lexeme, superclass, methods)
             env.assign(class_expr, klass)
         case Fun(name, params, body):
             env.define(name, LoxFunction(params, body, env))
@@ -181,6 +182,7 @@ class LoxFunction:
 @dataclass(slots=True)
 class LoxClass:
     name: str
+    superclass: Any  # LoxClass
     methods: Dict[str, LoxFunction]
 
     @property
@@ -194,6 +196,13 @@ class LoxClass:
         return self.name
 
 
+def _lookup_method(klass: LoxClass, name: str) -> LoxFunction:
+    if name in klass.methods:
+        return klass.methods[name]
+    if klass.superclass:
+        return _lookup_method(klass.superclass, name)
+
+
 @dataclass(slots=True)
 class LoxInstance:
     klass: LoxClass
@@ -204,8 +213,8 @@ class LoxInstance:
         if key_str in self.fields:
             return self.fields[key_str]
 
-        if key_str in self.klass.methods:
-            return _bind(self.klass.methods[key_str], self)
+        if method := _lookup_method(self.klass, key_str):
+            return _bind(method, self)
 
         raise runtime_error(key, "Undefined property.")
 

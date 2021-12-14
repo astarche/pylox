@@ -93,7 +93,7 @@ def _resolve(expr_or_stmt: Expr | Stmt, context: _ResolveContext):
         case Assign(name, _) as assignment:
             _bind(assignment, context)
             _resolve_children(expr_or_stmt, context)
-        case Class(name, _):
+        case Class(name, _, _):
             _declare(name, context)
             _define(name, context)
             with _enter_scope(context):

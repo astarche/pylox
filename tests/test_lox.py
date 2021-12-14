@@ -403,3 +403,36 @@ def test_this(capsys):
     )
 
     _assert_out_lines(capsys, "hello")
+
+
+def test_inherit_method(capsys):
+    run(
+        """
+        class T {
+            hello() { print "hello"; }
+            callHello() { this.hello(); }
+        }
+
+        class D < T {
+            childHello() { print "childHello"; }
+        }
+
+        class DD < D {
+            grandChildHello() { print "grandChildHello"; }
+            callHello() { this.childHello(); }
+        }
+
+        var o = D();
+        o.callHello();
+        o.childHello();
+        var oo = DD();
+        oo.hello();
+        oo.grandChildHello();
+        oo.childHello();
+        oo.callHello();
+        """
+    )
+
+    _assert_out_lines(
+        capsys, "hello", "childHello", "hello", "grandChildHello", "childHello", "childHello"
+    )

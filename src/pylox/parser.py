@@ -304,6 +304,11 @@ def _fun(parser: _ParseView) -> Fun:
 
 def _class_decl(parser: _ParseView) -> Class:
     name = parser.consume(TokenType.IDENTIFIER, "Expected class name.")
+    superclass = None
+    if parser.match(TokenType.LESS):
+        super_token = parser.consume(TokenType.IDENTIFIER, "Expected super class identifier.")
+        superclass = Variable(super_token)
+
     parser.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 
     methods: List[Fun] = []
@@ -312,7 +317,7 @@ def _class_decl(parser: _ParseView) -> Class:
 
     parser.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
 
-    return Class(name, methods)
+    return Class(name, superclass, methods)
 
 
 def _return(parser: _ParseView, keyword: Token) -> Return:
