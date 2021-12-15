@@ -76,3 +76,9 @@ class Set(Expr):
 @dataclass(slots=True, eq=True, frozen=True)
 class This(Expr):
     name: Token
+
+
+@dataclass(slots=True, eq=True, frozen=True)
+class Super(Expr):
+    name: Token
+    method: Token

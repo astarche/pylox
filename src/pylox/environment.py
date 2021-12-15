@@ -51,6 +51,11 @@ class Environment:
 
         raise runtime_error(named_expr.name, f"Attempt to access undefined variable {name}")
 
+    def access_unbound(self, name) -> object:
+        for scope in reversed(self._map):
+            if name in scope:
+                return scope[name]
+
 
 class _Clock:
     arity = 0

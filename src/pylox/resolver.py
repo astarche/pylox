@@ -4,7 +4,7 @@ from enum import Enum, auto
 from typing import Dict, Iterable, List
 
 from pylox.error import error
-from pylox.expr import Assign, Lambda, This, Variable
+from pylox.expr import Assign, Lambda, Super, This, Variable
 from pylox.iexpr import Expr, NamedExpr, Stmt
 from pylox.scanner import Token
 from pylox.stmt import Block, Class, Fun, Var
@@ -33,12 +33,14 @@ class _ResolveContext:
 
 
 @contextmanager
-def _enter_scope(context: _ResolveContext):
+def _enter_scope(context: _ResolveContext, condition=True):
     try:
-        context.scopes.append({})
+        if condition:
+            context.scopes.append({})
         yield
     finally:
-        context.scopes.pop()
+        if condition:
+            context.scopes.pop()
 
 
 def _resolve_children(expr_or_stmt: Expr | Stmt, context: _ResolveContext) -> None:
@@ -55,11 +57,12 @@ def _declare(name: Token, context: _ResolveContext):
         scope[name.lexeme] = _DefinedState.DECLARED
 
 
-def _define(name: Token, context: _ResolveContext):
+def _define(name: Token | str, context: _ResolveContext):
     if not context.scopes:
         return
     scope = context.scopes[-1]
-    scope[name.lexeme] = _DefinedState.DEFINED
+    name_str = name.lexeme if isinstance(name, Token) else name
+    scope[name_str] = _DefinedState.DEFINED
 
 
 def _bind(reference: NamedExpr, context: _ResolveContext):
@@ -93,12 +96,13 @@ def _resolve(expr_or_stmt: Expr | Stmt, context: _ResolveContext):
         case Assign(name, _) as assignment:
             _bind(assignment, context)
             _resolve_children(expr_or_stmt, context)
-        case Class(name, _, _):
-            _declare(name, context)
+        case Class(name, superclass, _):
             _define(name, context)
-            with _enter_scope(context):
-                context.scopes[-1]["this"] = _DefinedState.DEFINED
-                _resolve_children(expr_or_stmt, context)
+            with _enter_scope(context, superclass is not None):
+                _define("super", context)
+                with _enter_scope(context):
+                    _define("this", context)
+                    _resolve_children(expr_or_stmt, context)
         case Fun(name, params, _):
             _declare(name, context)
             _define(name, context)
@@ -115,6 +119,8 @@ def _resolve(expr_or_stmt: Expr | Stmt, context: _ResolveContext):
                 _resolve_children(expr_or_stmt, context)
         case This(_) as this:
             _bind(this, context)
+        case Super(_, _) as super:
+            _bind(super, context)
         case _:
             _resolve_children(expr_or_stmt, context)
 

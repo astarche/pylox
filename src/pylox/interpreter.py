@@ -12,6 +12,7 @@ from pylox.expr import (
     Lambda,
     Literal,
     Logical,
+    Super,
     This,
     Unary,
     Variable,
@@ -58,6 +59,9 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
         case Class(name, superclass_var, method_stmts) as class_expr:
             env.define(name, None)
             superclass = _interpret(superclass_var, env)
+            if superclass:
+                env = env.create_child()
+                env.define("super", superclass)
             methods: Dict[str, LoxFunction] = {}
             for method in method_stmts:
                 methods[method.name.lexeme] = LoxFunction(method.params, method.body, env)
@@ -155,6 +159,14 @@ def _interpret(expr_or_stmt: Expr | Stmt, env: Environment) -> object | None:
                 raise runtime_error(name, "Only instances have fields.")
         case This(_) as this_expr:
             return env.access(this_expr)
+        case Super(name, method) as super_expr:
+            superclass = env.access(super_expr)
+            if isinstance(superclass, LoxClass):
+                this = env.access_unbound("this")
+                if isinstance(this, LoxInstance):
+                    method = _lookup_method(superclass, method.lexeme)
+                    return _bind(method, this)
+            raise runtime_error(name, "Invalid super expression.")
 
 
 @dataclass(slots=True)

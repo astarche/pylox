@@ -482,3 +482,32 @@ def test_parent_constructor(capsys):
     )
 
     _assert_out_lines(capsys, "Hello", "World")
+
+
+def test_super_call(capsys):
+    run(
+        """
+        class T {
+            hello() {
+                print "HelloT";
+            }
+        }
+
+        class D < T { 
+            hello() {
+                super.hello();
+                print "HelloD";
+            }
+        }
+
+        class DD < D {
+        }
+
+        var o = D();
+        o.hello();
+        var oo = DD();
+        oo.hello();
+        """
+    )
+
+    _assert_out_lines(capsys, "HelloT", "HelloD", "HelloT", "HelloD")

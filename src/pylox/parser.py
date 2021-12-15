@@ -10,6 +10,7 @@ from pylox.expr import (
     Grouping,
     Lambda,
     Logical,
+    Super,
     This,
     Unary,
     Literal,
@@ -79,6 +80,10 @@ def _primary(parser: _ParseView) -> Expr:
         return Literal(False)
     if token := parser.match(TokenType.THIS):
         return This(token)
+    if token := parser.match(TokenType.SUPER):
+        parser.consume(TokenType.DOT, "Expect '.' after super expression.")
+        method = parser.consume(TokenType.IDENTIFIER, "Expect super class method name")
+        return Super(token, method)
     if parser.match(TokenType.NIL):
         return Literal(None)
     if token := parser.match(TokenType.NUMBER, TokenType.STRING):
